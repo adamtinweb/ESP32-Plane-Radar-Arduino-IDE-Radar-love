@@ -1,353 +1,343 @@
-# Plane Radar — Arduino IDE Port
+# ESP32 Plane Radar (Arduino IDE Port)
 
-ESP32-Plane-Radar-Arduino-IDE-Radar-love
+> Arduino IDE port of the original ESP32 Plane Radar project by MatixYo.
+>
+> Original project:
+> https://github.com/MatixYo/ESP32-Plane-Radar
 
-Arduino IDE firmware for an **ESP32-C3 Super Mini** and a **1.28″ round GC9A01 TFT display** (240×240).  
-Shows a circular ADS-B aircraft radar around your configured location, using WiFiManager for first-time setup.
-
-This version is adapted for the Arduino IDE and uses `.ino`-based sketch files rather than the original PlatformIO `src/main.cpp` layout.
+Firmware for an ESP32-C3 Super Mini and a 1.28" round GC9A01 display (240×240). Shows a circular ADS-B radar around your configured location, with WiFiManager for first-time setup.
 
 ---
 
 ## What it does
 
-- **Wi‑Fi setup** — captive portal on AP `PlaneRadar-Setup` when no saved Wi‑Fi is found
-- **Radar display** — live aircraft from `adsb.fi` on a circular sonar-style grid
-- **Automatic reconnect** — saved Wi‑Fi credentials are reused after reboot
-- **Range control** — short BOOT press cycles radar range presets
-- **Reset control** — long BOOT press clears saved Wi‑Fi/location settings
+### Wi-Fi setup (if needed)
 
-After Wi‑Fi is saved, the device reconnects automatically and the radar runs from the main Arduino loop with periodic ADS-B updates.
+- Captive portal on AP `PlaneRadar-Setup`
+- Configure Wi-Fi credentials
+- Configure radar location
+- Configure display options
+
+### Radar
+
+- Live aircraft from ADS-B data sources
+- Sonar-style circular radar display
+- Aircraft labels, headings, and speed vectors
+- Airport runway overlays (optional)
+
+After Wi-Fi is saved, the device reconnects automatically and starts the radar display.
 
 ---
 
 ## Hardware
 
-### Board
+### Tested Hardware
 
-Tested/targeted for:
+- ESP32-C3 Super Mini (Tenstar)
+- GC9A01 1.28" Round TFT Display (240×240)
 
-```text
-ESP32-C3 Super Mini / Tenstar ESP32-C3 Super Mini
-```
-
-Arduino IDE board selection:
-
-```text
-Tools → Board → ESP32 Arduino → ESP32C3 Dev Module
-```
-
-Recommended settings:
-
-```text
-USB CDC On Boot: Enabled
-CPU Frequency: 160 MHz
-Flash Size: 4MB
-Partition Scheme: Huge APP / No OTA / Minimal SPIFFS
-Upload Speed: 460800 or 115200
-Serial Monitor: 115200 baud
-```
-
-The firmware is quite large, so the default partition may be too small. Use a larger app partition such as **Huge APP** or **No OTA**.
-
----
-
-## Wiring — GC9A01 ↔ ESP32-C3 Super Mini
+### Wiring
 
 | Display | ESP32-C3 Super Mini |
-|---|---|
+|----------|----------|
 | VCC | 3V3 |
 | GND | GND |
 | RST | GPIO 0 |
 | CS | GPIO 1 |
 | DC | GPIO 10 |
-| SDA / MOSI | GPIO 3 |
-| SCL / SCLK | GPIO 4 |
-| BL | 3V3 |
-| BOOT button | GPIO 9 |
+| SDA (MOSI) | GPIO 3 |
+| SCL (SCLK) | GPIO 4 |
 
-Display pins are configured in:
+---
+
+## Arduino IDE Configuration
+
+Before compiling, configure the Arduino IDE:
+
+| Setting | Value |
+|----------|----------|
+| Board | ESP32C3 Dev Module |
+| Flash Size | 4MB |
+| USB CDC On Boot | Enabled |
+| CPU Frequency | 160MHz |
+| Upload Speed | 460800 |
+| Partition Scheme | Huge APP (3MB No OTA / 1MB SPIFFS) |
+
+### Important: Use the Huge APP Partition
+
+The Plane Radar firmware is larger than a typical ESP32 sketch because it includes:
+
+- LovyanGFX
+- WiFiManager
+- ArduinoJson
+- ADS-B processing
+- Airport runway database
+- Radar graphics engine
+
+Using the default partition layout will result in:
 
 ```text
-src/config.h
-src/hardware/lgfx_config.hpp
+Sketch too big
+text section exceeds available space in board
 ```
 
+To fix this:
+
+```text
+Arduino IDE
+→ Tools
+→ Partition Scheme
+→ Huge APP (3MB No OTA / 1MB SPIFFS)
+```
+
+If Huge APP is not available, update to the latest ESP32 board package from Espressif.
+
 ---
 
-## Controls — BOOT button, GPIO 9, active LOW
+## Wi-Fi Setup Portal
 
-| Action | Effect |
-|---|---|
-| Short tap | Cycle range preset: 5 → 10 → 15 → 25 km |
-| Hold 3 seconds | Clear Wi‑Fi, location, and saved settings, then reboot into setup portal |
-| Hold BOOT at power-on | Force credential reset / setup mode |
+### First-Time Setup
 
-Settings are saved to flash/NVS so they persist after reboot.
+When no Wi-Fi credentials are stored:
 
----
-
-## Wi‑Fi setup portal
-
-### First-time setup
-
-When no saved Wi‑Fi exists, the ESP32 creates this access point:
+1. Power on the device
+2. Connect to:
 
 ```text
 PlaneRadar-Setup
 ```
 
-Connect to it with your phone or laptop, then open:
+3. Open:
+
+```text
+http://plane-radar.local
+```
+
+or
 
 ```text
 http://192.168.4.1
 ```
 
-or:
+4. Enter your Wi-Fi credentials
+5. Enter your radar location
+6. Save settings
+
+The device will reboot and connect automatically.
+
+---
+
+## Finding Your Location (Latitude and Longitude)
+
+The radar is centred on the latitude and longitude configured in the setup portal.
+
+The easiest way to find your coordinates is:
+
+https://www.latlong.net/
+
+### How to Find Coordinates
+
+1. Visit https://www.latlong.net/
+2. Enter your town, postcode, airport, or address
+3. Click **Find**
+4. Copy the Latitude and Longitude values
+
+Example:
+
+```text
+Location: Romford, UK
+
+Latitude: 51.5761
+Longitude: 0.1837
+```
+
+### Entering Coordinates
+
+Open the configuration portal:
 
 ```text
 http://plane-radar.local
 ```
 
-The captive portal may also open automatically.
-
-Enter your home Wi‑Fi SSID/password and save.
-
----
-
-### Reconfigure later
-
-If the device is already on your Wi‑Fi, open:
+or
 
 ```text
-http://plane-radar.local
+http://<device-ip>
 ```
 
-or use the IP address shown in the serial monitor or your router.
-
-You can change:
-
-| Field | Purpose |
-|---|---|
-| Latitude | Radar centre latitude |
-| Longitude | Radar centre longitude |
-| Display distances in miles | Shows ring labels in miles instead of km |
-| Show airport runways | Enables/disables runway overlay |
-
----
-
-## Location
-
-The radar needs a latitude and longitude for its centre point.
-
-Default values are stored in:
+Enter the values into:
 
 ```text
-src/config.h
+Latitude
+Longitude
 ```
 
-Look for:
+Then click Save.
 
-```cpp
-constexpr double kDefaultRadarLat = ...;
-constexpr double kDefaultRadarLon = ...;
-```
+### Tips
 
-These defaults are used until you set a location through the Wi‑Fi setup portal.
+- Use at least 4 decimal places
+- Do not enter ° symbols
+- Negative longitude values are west of Greenwich
+- Negative latitude values are south of the equator
+
+Examples:
+
+| Location | Latitude | Longitude |
+|-----------|-----------|-----------|
+| London, UK | 51.5074 | -0.1278 |
+| Romford, UK | 51.5761 | 0.1837 |
+| New York, USA | 40.7128 | -74.0060 |
+| Sydney, Australia | -33.8688 | 151.2093 |
 
 ---
 
-## Radar display
+## Controls
 
-### Grid
+### BOOT Button (GPIO 9)
 
-- Dark radar-style background
-- Circular rings and crosshairs
-- N / S / E / W markers around the bezel
-- Range label on the east spoke
-- Centre dot for your configured location
+| Action | Effect |
+|----------|----------|
+| Short press | Cycle radar range |
+| Hold for 3 seconds | Clear Wi-Fi settings and reboot into setup mode |
+
+---
+
+## Radar Display
+
+### Features
+
+- Circular radar display
+- Aircraft heading indicators
+- Aircraft labels
+- Speed vectors
+- Range rings
+- Cardinal directions (N, E, S, W)
+- Optional runway overlays
 
 ### Aircraft
 
-- Aircraft inside the outer ring are drawn as heading markers
-- Speed vector shows projected movement
-- Callsign / type / altitude tags are shown where available
-- Aircraft outside the active ring may appear as rim direction markers
+Inside radar range:
 
-### Range presets
+- Aircraft symbol
+- Callsign
+- Aircraft type
+- Altitude
+- Heading
+- Speed vector
 
-| Ring label | Approx outer aircraft scale |
-|---|---|
-| 5 km / 3 mi | ~6.7 km |
-| 10 km / 6 mi | ~13.3 km |
-| 15 km / 9 mi | ~20 km |
-| 25 km / 16 mi | ~33.3 km |
+Outside radar range:
 
-Range preset and miles/km choice persist across reboot.
+- Bearing indicator dot shown on radar edge
 
 ---
 
-## ADS-B source
+## Airport Runway Overlays
 
-Aircraft data source:
+The firmware contains a database of major airports.
+
+Features:
+
+- Runway centreline display
+- Airport ICAO labels
+- Optional display toggle
+
+Airport data is stored in:
 
 ```text
-https://opendata.adsb.fi/api/v3/
+data/
+├── large_airports.h
+└── large_airports_data.cpp
 ```
-
-Relevant settings are in:
-
-```text
-src/config.h
-src/services/adsb_client.cpp
-src/ui/radar_range.h
-```
-
-Typical options:
-
-| Setting | Purpose |
-|---|---|
-| `kAdsbFetchIntervalMs` | ADS-B refresh interval |
-| `kAdsbShowGroundAircraft` | Show/hide ground aircraft |
-| `fetchRadiusKm()` | ADS-B query radius based on active range |
 
 ---
 
-## Arduino IDE project layout
+## Project Structure
 
 ```text
 PlaneRadar_Arduino/
-  PlaneRadar_Arduino.ino
-  src/
-    config.h
-    data/
-      large_airports_data.cpp
-    hardware/
-      display.cpp
-      display.h
-      lgfx_config.hpp
-    services/
-      adsb_client.cpp
-      adsb_client.h
-      radar_location.cpp
-      radar_location.h
-      wifi_setup.cpp
-      wifi_setup.h
-    ui/
-      radar_display.cpp
-      radar_display.h
-      radar_range.cpp
-      radar_range.h
-      runway_overlay.cpp
-      runway_overlay.h
-      status_screens.cpp
-      status_screens.h
+│
+├── PlaneRadar_Arduino.ino
+│
+├── src/
+│   ├── config.h
+│   │
+│   ├── hardware/
+│   │   ├── display.cpp
+│   │   ├── display.h
+│   │   └── lgfx_config.hpp
+│   │
+│   ├── services/
+│   │   ├── adsb_client.cpp
+│   │   ├── adsb_client.h
+│   │   ├── radar_location.cpp
+│   │   ├── radar_location.h
+│   │   ├── wifi_setup.cpp
+│   │   └── wifi_setup.h
+│   │
+│   └── ui/
+│       ├── radar_display.cpp
+│       ├── radar_display.h
+│       ├── radar_range.h
+│       └── status_screens.h
+│
+└── data/
+    ├── large_airports.h
+    └── large_airports_data.cpp
 ```
-
-The main sketch file is:
-
-```text
-PlaneRadar_Arduino.ino
-```
-
-Arduino IDE compiles the `.ino` file plus the `.cpp` files inside `src/`.
 
 ---
 
-## Build in Arduino IDE
+## Building
 
-1. Open:
+Install the following Arduino libraries:
 
-```text
-PlaneRadar_Arduino.ino
-```
-
-2. Select board:
-
-```text
-ESP32C3 Dev Module
-```
-
-3. Recommended settings:
-
-```text
-USB CDC On Boot: Enabled
-Flash Size: 4MB
-Partition Scheme: Huge APP / No OTA / Minimal SPIFFS
-Serial Monitor: 115200 baud
-```
-
-4. Install libraries:
-
-```text
-LovyanGFX
-WiFiManager
-ArduinoJson
-```
-
-5. Click Upload.
-
-If upload fails, hold **BOOT**, click Upload, then release **BOOT** when the IDE starts connecting.
-
----
-
-## Dependencies
-
-Install these from Arduino Library Manager:
+### Required Libraries
 
 - LovyanGFX
 - WiFiManager
 - ArduinoJson
 
-ESP32 board package required:
+Compile and upload using:
 
 ```text
-ESP32 by Espressif Systems
+Board: ESP32C3 Dev Module
+Partition: Huge APP (3MB No OTA / 1MB SPIFFS)
+USB CDC On Boot: Enabled
 ```
 
----
-
-## Serial monitor
-
-Use:
+Serial Monitor:
 
 ```text
 115200 baud
 ```
 
-Useful output includes:
+---
 
-- Wi‑Fi connection status
-- Device IP address
-- Portal status
-- ADS-B fetch status
-- Radar refresh messages
+## Credits
+
+This project is an Arduino IDE adaptation of the excellent original work by MatixYo:
+
+https://github.com/MatixYo/ESP32-Plane-Radar
+
+The original project was developed as a PlatformIO-based firmware for the ESP32-C3 Super Mini and GC9A01 round display, featuring ADS-B aircraft tracking, WiFiManager configuration, radar rendering, airport runway overlays, and aircraft data integration.
+
+This repository focuses on:
+
+- Porting the project to Arduino IDE
+- Adapting the build system away from PlatformIO
+- Updating include paths and project structure for Arduino compatibility
+- Supporting the ESP32-C3 Super Mini hardware configuration used in this repository
+- Preserving the original functionality wherever possible
+
+All credit for the original Plane Radar concept, architecture, UI design, and core implementation belongs to MatixYo and the contributors to the original project.
+
+If you find this project useful, please consider starring the original repository:
+
+https://github.com/MatixYo/ESP32-Plane-Radar
 
 ---
 
-## GitHub push notes
+## License
 
-For first upload to GitHub:
-
-```powershell
-cd "C:\Users\chiro\OneDrive\Documents\Arduino\Radar Love\radar\PlaneRadar_Arduino"
-git init
-git add .
-git commit -m "Initial Arduino IDE port for ESP32-C3 Super Mini"
-git branch -M main
-git remote add origin https://github.com/adamtinweb/ESP32-Plane-Radar-Arduino-IDE-Radar-love.git
-git push -u origin main
-```
-
-If GitHub already has files and you want to overwrite the remote:
-
-```powershell
-git push -u origin main --force
-```
-
----
-
-## Notes
-
-This is an Arduino IDE port of the Plane Radar project.  
-It keeps the radar UI and ADS-B behaviour but changes the project structure so it builds from `PlaneRadar_Arduino.ino` in Arduino IDE.
+Please refer to the original repository for licensing details and attribution requirements.
