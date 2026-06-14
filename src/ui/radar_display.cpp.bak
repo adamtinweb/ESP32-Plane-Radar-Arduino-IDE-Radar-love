@@ -760,6 +760,7 @@ bool ensureBackgroundSprite() {
   return true;
 }
 
+
 void renderFrame() {
   if (s_background_ready) {
     memcpy(s_frame.getBuffer(), s_background.getBuffer(),
@@ -773,14 +774,28 @@ void renderFrame() {
     drawAircraft();
   }
 
-  // Your LovyanGFX version only supports full sprite push.
-  // This is the safest non-blinking-compatible version.
+  const int dirtyX = 8;
+  const int dirtyY = 8;
+  const int dirtyW = radar::kSize - 16;
+  const int dirtyH = radar::kSize - 16;
+
+  uint16_t* frameBuffer = static_cast<uint16_t*>(s_frame.getBuffer());
+
   tft.startWrite();
-  s_frame.pushSprite(0, 0);
+
+  for (int row = 0; row < dirtyH; ++row) {
+    uint16_t* rowPtr = frameBuffer + ((dirtyY + row) * radar::kSize) + dirtyX;
+    tft.pushImage(dirtyX, dirtyY + row, dirtyW, 1, rowPtr);
+  }
+
   tft.endWrite();
 
   tft.setTextDatum(textdatum_t::top_left);
 }
+
+}  // namespace
+
+
 
 void radarDisplayDraw() {
   initPalette();

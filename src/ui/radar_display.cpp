@@ -433,7 +433,7 @@ void drawAircraftTag(int x, int y, const services::adsb::Aircraft& plane) {
 
   const int line_h = s_draw->fontHeight();
   const int block_w = measureTagBlockWidth(plane);
-  const int block_h = line_h * 3;
+  const int block_h = line_h * 2;
 
   int ly = y - block_h / 2;
 
@@ -456,20 +456,15 @@ void drawAircraftTag(int x, int y, const services::adsb::Aircraft& plane) {
 
   ly = std::max(1, std::min(ly, radar::kSize - block_h - 1));
 
-  if (plane.callsign[0] != '\0') {
-    s_draw->setTextColor(radar::kColorLabel, radar::kColorBackground);
-    s_draw->drawString(plane.callsign, anchor_x, ly);
-  }
-
-  ly += line_h;
-
+  // Aircraft Type (main label)
   if (plane.type[0] != '\0') {
-    s_draw->setTextColor(radar::kColorTagType, radar::kColorBackground);
+    s_draw->setTextColor(radar::kColorLabel, radar::kColorBackground);
     s_draw->drawString(plane.type, anchor_x, ly);
   }
 
   ly += line_h;
 
+  // Altitude
   if (plane.alt[0] != '\0') {
     s_draw->setTextColor(radar::kColorTagAltitude, radar::kColorBackground);
     s_draw->drawString(plane.alt, anchor_x, ly);
@@ -759,6 +754,8 @@ bool ensureBackgroundSprite() {
 
   return true;
 }
+
+
 void renderFrame() {
   if (s_background_ready) {
     memcpy(s_frame.getBuffer(), s_background.getBuffer(),
@@ -772,14 +769,28 @@ void renderFrame() {
     drawAircraft();
   }
 
+  const int dirtyX = 8;
+  const int dirtyY = 8;
+  const int dirtyW = radar::kSize - 16;
+  const int dirtyH = radar::kSize - 16;
+
+  uint16_t* frameBuffer = static_cast<uint16_t*>(s_frame.getBuffer());
+
   tft.startWrite();
-  s_frame.pushSprite(0, 0);
+
+  for (int row = 0; row < dirtyH; ++row) {
+    uint16_t* rowPtr = frameBuffer + ((dirtyY + row) * radar::kSize) + dirtyX;
+    tft.pushImage(dirtyX, dirtyY + row, dirtyW, 1, rowPtr);
+  }
+
   tft.endWrite();
 
   tft.setTextDatum(textdatum_t::top_left);
 }
 
 }  // namespace
+
+
 
 void radarDisplayDraw() {
   initPalette();
