@@ -759,6 +759,7 @@ bool ensureBackgroundSprite() {
 
   return true;
 }
+
 void renderFrame() {
   if (s_background_ready) {
     memcpy(s_frame.getBuffer(), s_background.getBuffer(),
@@ -772,14 +773,14 @@ void renderFrame() {
     drawAircraft();
   }
 
+  // Your LovyanGFX version only supports full sprite push.
+  // This is the safest non-blinking-compatible version.
   tft.startWrite();
   s_frame.pushSprite(0, 0);
   tft.endWrite();
 
   tft.setTextDatum(textdatum_t::top_left);
 }
-
-}  // namespace
 
 void radarDisplayDraw() {
   initPalette();
