@@ -22,7 +22,9 @@ Firmware for an ESP32-C3 Super Mini and a 1.28" round GC9A01 display (240×240).
 
 - Live aircraft from ADS-B data sources
 - Sonar-style circular radar display
-- Aircraft labels, headings, and speed vectors
+- Aircraft type and altitude labels
+- Aircraft heading indicators
+- Speed vectors
 - Airport runway overlays (optional)
 
 After Wi-Fi is saved, the device reconnects automatically and starts the radar display.
@@ -61,7 +63,7 @@ Before compiling, configure the Arduino IDE:
 | USB CDC On Boot | Enabled |
 | CPU Frequency | 160MHz |
 | Upload Speed | 460800 |
-| Partition Scheme | Huge APP (3MB No OTA / 1MB SPIFFS) |
+| Partition Scheme | **Huge APP (3MB No OTA / 1MB SPIFFS)** |
 
 ### Important: Use the Huge APP Partition
 
@@ -89,8 +91,6 @@ Arduino IDE
 → Partition Scheme
 → Huge APP (3MB No OTA / 1MB SPIFFS)
 ```
-
-If Huge APP is not available, update to the latest ESP32 board package from Espressif.
 
 ---
 
@@ -208,27 +208,43 @@ Examples:
 ### Features
 
 - Circular radar display
-- Aircraft heading indicators
-- Aircraft labels
+- Aircraft type labels
+- Aircraft altitude labels
+- Heading indicators
 - Speed vectors
 - Range rings
 - Cardinal directions (N, E, S, W)
 - Optional runway overlays
 
-### Aircraft
+### Aircraft Labels
 
-Inside radar range:
+This Arduino IDE version displays:
 
-- Aircraft symbol
-- Callsign
-- Aircraft type
-- Altitude
-- Heading
-- Speed vector
+```text
+A320
+38000
+```
 
-Outside radar range:
+instead of:
 
-- Bearing indicator dot shown on radar edge
+```text
+EZY123
+A320
+38000
+```
+
+Aircraft type is shown as the primary label, with altitude beneath it.
+
+### Reduced Screen Flicker
+
+This port includes several optimisations to reduce visible display refresh flicker:
+
+- Cached radar background sprite
+- Aircraft-only redraws
+- Single buffered screen updates
+- SPI transaction wrapping during display updates
+
+The ADS-B refresh interval remains at 5 seconds.
 
 ---
 
@@ -279,6 +295,9 @@ PlaneRadar_Arduino/
 │       ├── radar_display.cpp
 │       ├── radar_display.h
 │       ├── radar_range.h
+│       ├── radar_theme.h
+│       ├── runway_overlay.cpp
+│       ├── runway_overlay.h
 │       └── status_screens.h
 │
 └── data/
@@ -290,19 +309,17 @@ PlaneRadar_Arduino/
 
 ## Building
 
-Install the following Arduino libraries:
-
-### Required Libraries
+### Required Arduino Libraries
 
 - LovyanGFX
 - WiFiManager
 - ArduinoJson
 
-Compile and upload using:
+Compile using:
 
 ```text
 Board: ESP32C3 Dev Module
-Partition: Huge APP (3MB No OTA / 1MB SPIFFS)
+Partition Scheme: Huge APP (3MB No OTA / 1MB SPIFFS)
 USB CDC On Boot: Enabled
 ```
 
@@ -310,6 +327,24 @@ Serial Monitor:
 
 ```text
 115200 baud
+```
+
+---
+
+## Git Notes
+
+Ignore backup files by adding a `.gitignore` file:
+
+```gitignore
+*.bak
+```
+
+Commit and push changes:
+
+```powershell
+git add -A
+git commit -m "Update radar display"
+git push
 ```
 
 ---

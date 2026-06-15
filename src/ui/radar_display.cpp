@@ -456,7 +456,15 @@ void drawAircraftTag(int x, int y, const services::adsb::Aircraft& plane) {
 
   ly = std::max(1, std::min(ly, radar::kSize - block_h - 1));
 
-  // Aircraft Type (main label)
+  // Aircraft Callsign (main label)
+  if (plane.callsign[0] != '\0') {
+  s_draw->setTextColor(radar::kColorLabel, radar::kColorBackground);
+  s_draw->drawString(plane.callsign, anchor_x, ly);
+  }
+
+  ly += line_h;
+
+  // Aircraft Type 
   if (plane.type[0] != '\0') {
     s_draw->setTextColor(radar::kColorLabel, radar::kColorBackground);
     s_draw->drawString(plane.type, anchor_x, ly);

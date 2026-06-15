@@ -1,0 +1,8 @@
+# Backup files
+*.bak
+
+# PowerShell helper scripts
+*.ps1
+
+# Arduino build folders
+build/
