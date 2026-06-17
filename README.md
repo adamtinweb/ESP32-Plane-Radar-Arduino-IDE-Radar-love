@@ -50,6 +50,9 @@ After Wi-Fi is saved, the device reconnects automatically and starts the radar d
 | SDA (MOSI) | GPIO 3 |
 | SCL (SCLK) | GPIO 4 |
 
+### ESP32-C3 Super Mini Pinout
+
+![ESP32-C3 Super Mini Pinout](ESP32%20C3%20Supermini%20Pinout.jpg)
 ---
 
 ## Arduino IDE Configuration
