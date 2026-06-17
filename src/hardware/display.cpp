@@ -6,7 +6,7 @@ LGFX tft;
 
 void displayInit() {
   tft.init();
-  tft.setRotation(0);
+  tft.setRotation(2);
   tft.setBrightness(255);
   tft.setTextWrap(false);
   displayFontInit();

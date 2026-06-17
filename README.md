@@ -46,7 +46,7 @@ After Wi-Fi is saved, the device reconnects automatically and starts the radar d
 | GND | GND |
 | RST | GPIO 0 |
 | CS | GPIO 1 |
-| DC | GPIO 10 |
+| DC | GPIO 2 |
 | SDA (MOSI) | GPIO 3 |
 | SCL (SCLK) | GPIO 4 |
 
