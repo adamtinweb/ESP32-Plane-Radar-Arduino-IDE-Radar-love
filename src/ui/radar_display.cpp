@@ -5,7 +5,6 @@
 #include <algorithm>
 #include <cmath>
 #include <cstdlib>
-#include <cstring>
 
 #include "../config.h"
 #include "../hardware/display.h"
@@ -53,12 +52,6 @@ int s_scale_label_max_w = 0;
 int s_scale_label_h = 0;
 
 lgfx::LovyanGFX* s_draw = &tft;
-
-LGFX_Sprite s_frame(&tft);
-LGFX_Sprite s_background(&tft);
-
-bool s_frame_ready = false;
-bool s_background_ready = false;
 
 class DrawScope {
  public:
@@ -725,77 +718,6 @@ void drawStaticGrid(Gfx& gfx) {
   gfx.setTextDatum(textdatum_t::top_left);
 }
 
-bool ensureFrameSprite() {
-  if (s_frame_ready) {
-    return true;
-  }
-
-  s_frame.setColorDepth(16);
-
-  if (!s_frame.createSprite(radar::kSize, radar::kSize)) {
-    Serial.println("radar: frame sprite alloc failed");
-    return false;
-  }
-
-  s_frame_ready = true;
-
-  return true;
-}
-
-bool ensureBackgroundSprite() {
-  if (s_background_ready) {
-    return true;
-  }
-
-  s_background.setColorDepth(16);
-
-  if (!s_background.createSprite(radar::kSize, radar::kSize)) {
-    Serial.println("radar: background sprite alloc failed");
-    return false;
-  }
-
-  drawStaticGrid(s_background);
-
-  s_background_ready = true;
-
-  Serial.println("radar: cached static background");
-
-  return true;
-}
-
-
-void renderFrame() {
-  if (s_background_ready) {
-    memcpy(s_frame.getBuffer(), s_background.getBuffer(),
-           radar::kSize * radar::kSize * sizeof(uint16_t));
-  } else {
-    drawStaticGrid(s_frame);
-  }
-
-  {
-    const DrawScope scope(s_frame);
-    drawAircraft();
-  }
-
-  const int dirtyX = 8;
-  const int dirtyY = 8;
-  const int dirtyW = radar::kSize - 16;
-  const int dirtyH = radar::kSize - 16;
-
-  uint16_t* frameBuffer = static_cast<uint16_t*>(s_frame.getBuffer());
-
-  tft.startWrite();
-
-  for (int row = 0; row < dirtyH; ++row) {
-    uint16_t* rowPtr = frameBuffer + ((dirtyY + row) * radar::kSize) + dirtyX;
-    tft.pushImage(dirtyX, dirtyY + row, dirtyW, 1, rowPtr);
-  }
-
-  tft.endWrite();
-
-  tft.setTextDatum(textdatum_t::top_left);
-}
-
 }  // namespace
 
 
@@ -803,13 +725,6 @@ void renderFrame() {
 void radarDisplayDraw() {
   initPalette();
   initLabelMetrics();
-
-  ensureBackgroundSprite();
-
-  if (ensureFrameSprite()) {
-    renderFrame();
-    return;
-  }
 
   const DrawScope scope(tft);
 
@@ -821,14 +736,6 @@ void radarDisplayDraw() {
 
 void radarDisplayRefreshAircraft() {
   initPalette();
-
-  ensureBackgroundSprite();
-
-  if (ensureFrameSprite()) {
-    renderFrame();
-    return;
-  }
-
   radarDisplayDraw();
 }
 
