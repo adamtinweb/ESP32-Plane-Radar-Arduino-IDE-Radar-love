@@ -210,10 +210,10 @@ void statusScreenConnectingTick() {
 
 void statusScreenPortal() {
   const TextLine lines[] = {
-      {"Radar Setup", 1.15f, &kPortalGfxTitle},
-      {"Join WiFi:", 1.0f, &kPortalGfxBody},
+      {"Setup", 1.15f, &kPortalGfxTitle},
+      {"Join this WiFi:", 1.0f, &kPortalGfxBody},
       {config::kPortalApName, 1.05f, &kPortalGfxEmphasis},
-      {"Then visit:", 1.0f, &kPortalGfxBody},
+      {"Go to:", 1.0f, &kPortalGfxBody},
       {"192.168.4.1", 1.05f, &kPortalGfxEmphasis},
   };
   drawTextBlock(config::kColorYellow, config::kTextOnYellow, lines,

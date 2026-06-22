@@ -26,9 +26,7 @@ bool s_long_press_handled = false;
 bool s_boot_interrupt_attached = false;
 
 void IRAM_ATTR onBootButtonIsr() {
-  // Either button being held LOW counts as pressed
-  const bool down = digitalRead(config::kBootPin) == LOW ||
-                    digitalRead(GPIO_NUM_9) == LOW;
+  const bool down = digitalRead(config::kBootPin) == LOW;
   const unsigned long now = millis();
   portENTER_CRITICAL_ISR(&s_boot_mux);
   if (down) {
@@ -48,13 +46,11 @@ void initBootButton() {
   pinMode(config::kBootPin, INPUT_PULLUP);
   pinMode(GPIO_NUM_8, OUTPUT);
   digitalWrite(GPIO_NUM_8, LOW);
-  pinMode(GPIO_NUM_9, INPUT_PULLUP);
   if (s_boot_interrupt_attached) {
     return;
   }
   attachInterrupt(digitalPinToInterrupt(static_cast<uint8_t>(config::kBootPin)),
-                  onBootButtonIsr, CHANGE);  // GPIO7
-  attachInterrupt(digitalPinToInterrupt(GPIO_NUM_9), onBootButtonIsr, CHANGE);
+                  onBootButtonIsr, CHANGE);
   s_boot_interrupt_attached = true;
 }
 
