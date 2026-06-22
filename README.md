@@ -107,7 +107,7 @@ When no Wi-Fi credentials are stored:
 2. Connect to:
 
 ```text
-PlaneRadar-Setup
+Radar-Setup
 ```
 
 3. Open:
@@ -197,29 +197,23 @@ Examples:
 
 ## Controls
 
-Both the onboard BOOT button and the external button (see wiring below) perform the same actions:
-
 | Action | Effect |
 |----------|----------|
 | Short press | Cycle radar range |
 | Hold for 3 seconds | Clear Wi-Fi settings and reboot into setup mode |
 
-### Onboard BOOT Button
-
-The built-in BOOT button on the ESP32-C3 Super Mini (GPIO 9) works out of the box with no extra components.
-
 ### External Button (GPIO 7 / GPIO 8)
 
-An external momentary push button can be added for easier access:
+A momentary push button is required — the onboard BOOT button is not used.
 
 | Button leg | ESP32-C3 pin |
 |------------|--------------|
 | Leg 1 | GPIO 7 (input) |
 | Leg 2 | GPIO 8 (soft GND) |
 
-GPIO 8 is configured as output LOW in firmware, acting as a ground rail for the button. No external pull-up or pull-down resistor is needed — the internal pull-up on GPIO 7 handles this.
+GPIO 8 is driven LOW in firmware as a soft ground rail. No external resistors needed — the internal pull-up on GPIO 7 handles this.
 
-GPIO 7 and GPIO 8 are adjacent pins on the ESP32-C3 Super Mini, so a standard 2-pin push button can straddle them directly with no wires.
+GPIO 7 and GPIO 8 are adjacent pins on the ESP32-C3 Super Mini, so a standard 2-pin push button can straddle them directly with no wires needed.
 
 ```
 ESP32-C3 Super Mini
