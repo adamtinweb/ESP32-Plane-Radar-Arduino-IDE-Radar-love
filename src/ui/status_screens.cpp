@@ -210,12 +210,11 @@ void statusScreenConnectingTick() {
 
 void statusScreenPortal() {
   const TextLine lines[] = {
-      {"Wi-Fi setup", 1.15f, &kPortalGfxTitle},
-      {"1. Join network:", 1.05f, &kPortalGfxBody},
-      {config::kPortalApName, 1.12f, &kPortalGfxEmphasis},
-      {"2. Open in browser:", 1.05f, &kPortalGfxBody},
-      {config::kPortalHostUrl, 1.12f, &kPortalGfxEmphasis},
-      {"or 192.168.4.1", 1.0f, &kPortalGfxBody},
+      {"Radar Setup", 1.15f, &kPortalGfxTitle},
+      {"Join WiFi:", 1.0f, &kPortalGfxBody},
+      {config::kPortalApName, 1.05f, &kPortalGfxEmphasis},
+      {"Then visit:", 1.0f, &kPortalGfxBody},
+      {"192.168.4.1", 1.05f, &kPortalGfxEmphasis},
   };
   drawTextBlock(config::kColorYellow, config::kTextOnYellow, lines,
                 sizeof(lines) / sizeof(lines[0]));
@@ -226,7 +225,7 @@ void statusScreenConnectFailed() {
       {"Could not connect", 1.15f, &kGfxTitle},
       {"Check Wi-Fi password", 1.0f, &kGfxBody},
       {"and signal strength.", 1.0f, &kGfxBody},
-      {"Hold BOOT 3 sec", 1.0f, &kGfxBody},
+      {"Hold button 3 sec", 1.0f, &kGfxBody},
       {"to reset Wi-Fi", 1.0f, &kGfxBody},
   };
   drawTextBlock(config::kColorYellow, config::kTextOnYellow, lines,
