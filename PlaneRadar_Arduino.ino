@@ -1,5 +1,5 @@
 /**
- * Radar Love v2 — WiFi setup, then radar UI on the round GC9A01 display.
+ * Radar Love v2.1 — WiFi setup, then radar UI on the round GC9A01 display.
  */
 
 #include <WiFi.h>

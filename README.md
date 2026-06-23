@@ -9,6 +9,18 @@ Firmware for an ESP32-C3 Super Mini and a 1.28" round GC9A01 display (240×240).
 
 ---
 
+## Changelog
+
+### v2.1
+- **Button reliability fix:** replaced interrupt-based button detection with a polling state machine. The interrupt approach was unreliable alongside ESP32 WiFi operations (RF activity can delay or drop GPIO interrupts). The new debounce state machine reads the button directly every loop iteration, registering every press consistently.
+
+### v2.0
+- External GPIO 7 / GPIO 8 button (onboard BOOT button removed)
+- Radar-Setup AP name
+- Updated setup screen layout
+
+---
+
 ## What it does
 
 ### Wi-Fi setup (if needed)

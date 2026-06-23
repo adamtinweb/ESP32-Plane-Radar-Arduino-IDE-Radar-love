@@ -6,6 +6,8 @@
 
 namespace config {
 
+constexpr char kFirmwareVersion[] = "2.1";
+
 // --- Wi-Fi portal ---
 constexpr char kPortalApName[] = "Radar-Setup";
 constexpr char kPortalIp[] = "192.168.1.4";

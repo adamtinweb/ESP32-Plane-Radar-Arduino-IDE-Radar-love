@@ -18,40 +18,20 @@
 #include "../ui/radar_range.h"
 #include "../ui/status_screens.h"
 
-portMUX_TYPE s_boot_mux = portMUX_INITIALIZER_UNLOCKED;
-volatile bool s_boot_tap_pending = false;
-volatile bool s_boot_is_down = false;
-volatile unsigned long s_boot_down_ms = 0;
-bool s_long_press_handled = false;
-bool s_boot_interrupt_attached = false;
+// Polling debounce state machine — no interrupt, proven reliable alongside WiFi
+static constexpr unsigned long kBtnDebounceMs = 15UL;
 
-void IRAM_ATTR onBootButtonIsr() {
-  const bool down = digitalRead(config::kBootPin) == LOW;
-  const unsigned long now = millis();
-  portENTER_CRITICAL_ISR(&s_boot_mux);
-  if (down) {
-    s_boot_is_down = true;
-    s_boot_down_ms = now;
-  } else if (s_boot_is_down) {
-    const unsigned long held = now - s_boot_down_ms;
-    if (held >= config::kBootTapMinMs && held < config::kBootResetHoldMs) {
-      s_boot_tap_pending = true;
-    }
-    s_boot_is_down = false;
-  }
-  portEXIT_CRITICAL_ISR(&s_boot_mux);
-}
+enum class BtnState : uint8_t { IDLE, DEBOUNCING_DOWN, HELD, DEBOUNCING_UP };
+static BtnState      s_btn_state    = BtnState::IDLE;
+static unsigned long s_btn_edge_ms  = 0;
+static unsigned long s_btn_press_ms = 0;
+static bool          s_boot_tap_pending   = false;
+static bool          s_long_press_handled = false;
 
 void initBootButton() {
   pinMode(config::kBootPin, INPUT_PULLUP);
-  pinMode(GPIO_NUM_8, OUTPUT);
+  pinMode(GPIO_NUM_8, OUTPUT);   // GPIO8 is the button's ground side
   digitalWrite(GPIO_NUM_8, LOW);
-  if (s_boot_interrupt_attached) {
-    return;
-  }
-  attachInterrupt(digitalPinToInterrupt(static_cast<uint8_t>(config::kBootPin)),
-                  onBootButtonIsr, CHANGE);
-  s_boot_interrupt_attached = true;
 }
 
 namespace {
@@ -369,36 +349,58 @@ bool wifiBootButtonPressed() {
 void bootButtonInit() { initBootButton(); }
 
 bool bootButtonConsumeTap() {
-  portENTER_CRITICAL(&s_boot_mux);
-  const bool tap = s_boot_tap_pending;
-  if (tap) {
-    s_boot_tap_pending = false;
-  }
-  portEXIT_CRITICAL(&s_boot_mux);
-  return tap;
+  if (!s_boot_tap_pending) return false;
+  s_boot_tap_pending = false;
+  return true;
 }
 
 void bootButtonPollLongPress() {
-  if (wifiBootButtonPressed()) {
-    portENTER_CRITICAL(&s_boot_mux);
-    if (!s_boot_is_down) {
-      s_boot_is_down = true;
-      s_boot_down_ms = millis();
-    }
-    const unsigned long down_ms = s_boot_down_ms;
-    portEXIT_CRITICAL(&s_boot_mux);
+  const bool raw_low = (digitalRead(config::kBootPin) == LOW);
+  const unsigned long now = millis();
 
-    if (!s_long_press_handled &&
-        millis() - down_ms >= config::kBootResetHoldMs) {
-      s_long_press_handled = true;
-      Serial.println("BOOT held — resetting WiFi");
-      wifiResetCredentialsAndReboot();
-    }
-  } else {
-    portENTER_CRITICAL(&s_boot_mux);
-    s_boot_is_down = false;
-    portEXIT_CRITICAL(&s_boot_mux);
-    s_long_press_handled = false;
+  switch (s_btn_state) {
+    case BtnState::IDLE:
+      if (raw_low) {
+        s_btn_state   = BtnState::DEBOUNCING_DOWN;
+        s_btn_edge_ms = now;
+      }
+      break;
+
+    case BtnState::DEBOUNCING_DOWN:
+      if (!raw_low) {
+        s_btn_state = BtnState::IDLE;
+      } else if (now - s_btn_edge_ms >= kBtnDebounceMs) {
+        s_btn_state    = BtnState::HELD;
+        s_btn_press_ms = s_btn_edge_ms;
+      }
+      break;
+
+    case BtnState::HELD:
+      if (!raw_low) {
+        s_btn_state   = BtnState::DEBOUNCING_UP;
+        s_btn_edge_ms = now;
+      } else if (!s_long_press_handled &&
+                 now - s_btn_press_ms >= config::kBootResetHoldMs) {
+        s_long_press_handled = true;
+        Serial.println("BOOT held — resetting WiFi");
+        wifiResetCredentialsAndReboot();
+      }
+      break;
+
+    case BtnState::DEBOUNCING_UP:
+      if (raw_low) {
+        s_btn_state = BtnState::HELD;
+      } else if (now - s_btn_edge_ms >= kBtnDebounceMs) {
+        const unsigned long held_ms = s_btn_edge_ms - s_btn_press_ms;
+        if (!s_long_press_handled &&
+            held_ms >= config::kBootTapMinMs &&
+            held_ms < config::kBootResetHoldMs) {
+          s_boot_tap_pending = true;
+        }
+        s_long_press_handled = false;
+        s_btn_state = BtnState::IDLE;
+      }
+      break;
   }
 }
 
